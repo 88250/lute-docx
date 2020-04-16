@@ -159,13 +159,26 @@ func (r *DocxRenderer) RenderCover() {
 // NewDocxRenderer 创建一个 HTML 渲染器。
 func NewDocxRenderer(tree *parse.Tree, regularFont, boldFont, italicFont string) *DocxRenderer {
 	doc := document.New()
-	hlStyle := doc.Styles.AddStyle("Hyperlink", wml.ST_StyleTypeCharacter, false)
-	hlStyle.SetName("Hyperlink")
-	hlStyle.SetBasedOn("DefaultParagraphFont")
-	hlStyle.RunProperties().Color().SetThemeColor(wml.ST_ThemeColorHyperlink)
-	clr := color.FromHex("#0563C1")
-	hlStyle.RunProperties().Color().SetColor(clr)
-	hlStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, clr)
+	linkStyle := doc.Styles.AddStyle("Hyperlink", wml.ST_StyleTypeCharacter, false)
+	linkStyle.SetName("Hyperlink")
+	linkStyle.SetBasedOn("DefaultParagraphFont")
+	linkColor := color.FromHex("#4285F4")
+	linkStyle.RunProperties().Color().SetColor(linkColor)
+	linkStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, linkColor)
+
+	codeStyle := doc.Styles.AddStyle("Code", wml.ST_StyleTypeCharacter, false)
+	codeStyle.SetName("Code")
+	codeStyle.SetBasedOn("DefaultParagraphFont")
+	codeColor := color.FromHex("#FF9933")
+	codeStyle.RunProperties().Color().SetColor(codeColor)
+	codeStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, codeColor)
+
+	codeBlockStyle := doc.Styles.AddStyle("Code", wml.ST_StyleTypeCharacter, false)
+	codeBlockStyle.SetName("Code")
+	codeBlockStyle.SetBasedOn("DefaultParagraphFont")
+	codeBlockColor := color.FromHex("#569E3D")
+	codeBlockStyle.RunProperties().Color().SetColor(codeBlockColor)
+	codeBlockStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, codeBlockColor)
 
 	ret := &DocxRenderer{BaseRenderer: render.NewBaseRenderer(tree), needRenderFootnotesDef: false, doc: doc}
 	ret.zoom = 0.8
@@ -444,9 +457,23 @@ func (r *DocxRenderer) renderCodeBlockLike(content []byte) {
 }
 
 func (r *DocxRenderer) renderCodeSpanLike(content []byte) {
-	r.pushTextColor(&RGB{255, 153, 51})
+	para := r.peekPara()
+	run := para.AddRun()
+	run.Properties().SetStyle("Code")
+	r.pushRun(&run)
 	r.WriteString(util.BytesToStr(content))
-	r.popTextColor()
+	r.popRun()
+	r.reRun()
+}
+
+func (r *DocxRenderer) reRun() {
+	if nil != r.peekRun() {
+		// 如果链接之前有输出的话需要先结束掉，然后重新开一个
+		r.popRun()
+		para := r.peekPara()
+		run := para.AddRun()
+		r.pushRun(&run)
+	}
 }
 
 func (r *DocxRenderer) renderCodeBlockCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
@@ -688,13 +715,7 @@ func (r *DocxRenderer) renderLink(node *ast.Node, entering bool) ast.WalkStatus 
 		r.pushRun(&run)
 	} else {
 		r.popRun()
-		if nil != r.peekRun() {
-			// 如果链接之前有输出的话需要先结束掉，然后重新开一个
-			r.popRun()
-			para := r.peekPara()
-			run := para.AddRun()
-			r.pushRun(&run)
-		}
+		r.reRun()
 	}
 	return ast.WalkContinue
 }
