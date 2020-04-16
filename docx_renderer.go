@@ -677,7 +677,9 @@ func (r *DocxRenderer) renderImage(node *ast.Node, entering bool) ast.WalkStatus
 			if ok {
 				img, _ := common.ImageFromFile(src)
 				imgRef, _ := r.doc.AddImage(img)
-				r.peekRun().AddDrawingInline(imgRef)
+				inline, _ := r.peekRun().AddDrawingInline(imgRef)
+				width, height := r.getImgSize(src)
+				inline.SetSize(measurement.Distance(width), measurement.Distance(height))
 				if isTemp {
 					r.images = append(r.images, src)
 				}
@@ -754,7 +756,7 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 		inTightList = grandparent.Tight
 	}
 
-	if inTightList { // List.ListItem.Paragraph
+	if inTightList {
 		if entering {
 			para := r.peekPara()
 			run := para.AddRun()
@@ -765,18 +767,51 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 		return ast.WalkContinue
 	}
 
+	isFirstParaInList := false
+	if inList {
+		isFirstParaInList = node.Parent.FirstChild == node
+	}
+
 	if entering {
 		if !inList {
 			para := r.doc.AddParagraph()
 			r.pushPara(&para)
 			run := para.AddRun()
 			r.pushRun(&run)
+		} else {
+			if inTightList {
+				para := r.peekPara()
+				run := para.AddRun()
+				r.pushRun(&run)
+			} else {
+				if isFirstParaInList {
+					para := r.peekPara()
+					run := para.AddRun()
+					r.pushRun(&run)
+				} else {
+					para := r.doc.AddParagraph()
+					r.pushPara(&para)
+					run := para.AddRun()
+					r.pushRun(&run)
+				}
+			}
 		}
 	} else {
 		if !inList {
 			r.peekRun().AddBreak()
 			r.popRun()
 			r.popPara()
+		} else {
+			if inTightList {
+				r.popRun()
+			} else {
+				if isFirstParaInList {
+					r.popRun()
+				} else {
+					r.popRun()
+					r.popPara()
+				}
+			}
 		}
 	}
 	return ast.WalkContinue
@@ -1023,6 +1058,10 @@ func (r *DocxRenderer) popRun() *document.Run {
 }
 
 func (r *DocxRenderer) peekRun() *document.Run {
+	if 1 > len(r.runs) {
+		return nil
+	}
+
 	return r.runs[len(r.runs)-1]
 }
 

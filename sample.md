@@ -45,7 +45,8 @@ TBD
 
 * [讨论区](https://hacpai.com/tag/lute)
 * [报告问题](https://github.com/88250/lute-docx/issues/new)
-* 欢迎关注 B3log 开源社区微信公众号 `B3log开源`  
+* 欢迎关注 B3log 开源社区微信公众号 `B3log开源`
+
   ![b3logos.png](https://img.hacpai.com/file/2019/10/image-d3c00d78.png)
 
 ## 开源协议
