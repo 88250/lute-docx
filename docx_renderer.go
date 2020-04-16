@@ -27,6 +27,7 @@ import (
 	"github.com/88250/lute/render"
 	"github.com/88250/lute/util"
 	"github.com/unidoc/unioffice/document"
+	"github.com/unidoc/unioffice/measurement"
 )
 
 // DocxRenderer 描述了 PDF 渲染器。
@@ -39,20 +40,21 @@ type DocxRenderer struct {
 	BoldFont    string     // 粗体字体文件路径
 	ItalicFont  string     // 斜体字体文件路径
 
-	doc          *document.Document // DOCX 生成器句柄
-	zoom         float64            // 字体、行高大小倍数
-	fontSize     int                // 字体大小
-	lineHeight   float64            // 行高
-	heading1Size float64            // 一级标题大小
-	heading2Size float64            // 二级标题大小
-	heading3Size float64            // 三级标题大小
-	heading4Size float64            // 四级标题大小
-	heading5Size float64            // 五级标题大小
-	heading6Size float64            // 六级标题大小
-	margin       float64            // 页边距
-	x            []float64          // 当前横坐标栈
-	fonts        []*Font            // 当前字体栈
-	textColors   []*RGB             // 当前文本颜色栈
+	doc          *document.Document    // DOCX 生成器句柄
+	zoom         float64               // 字体、行高大小倍数
+	fontSize     int                   // 字体大小
+	lineHeight   float64               // 行高
+	heading1Size float64               // 一级标题大小
+	heading2Size float64               // 二级标题大小
+	heading3Size float64               // 三级标题大小
+	heading4Size float64               // 四级标题大小
+	heading5Size float64               // 五级标题大小
+	heading6Size float64               // 六级标题大小
+	margin       float64               // 页边距
+	x            []float64             // 当前横坐标栈
+	paragraphs   []*document.Paragraph // 当前段落栈
+	runs         []*document.Run       // 当前排版栈
+	textColors   []*RGB                // 当前文本颜色栈
 }
 
 // DocxCover 描述了 PDF 封面。
@@ -195,7 +197,6 @@ func NewDocxRenderer(tree *parse.Tree, regularFont, boldFont, italicFont string)
 	//	logger.Fatal(err)
 	//}
 
-	ret.pushFont(&Font{"regular", "R", ret.fontSize})
 	ret.pushTextColor(&RGB{0, 0, 0})
 	//pdf.SetMargins(ret.margin, ret.margin, ret.margin, ret.margin)
 
@@ -451,10 +452,6 @@ func (r *DocxRenderer) renderCodeBlockOpenMarker(node *ast.Node, entering bool) 
 }
 
 func (r *DocxRenderer) renderEmojiAlias(node *ast.Node, entering bool) ast.WalkStatus {
-	r.pushFont(&Font{"emoji", "R", r.fontSize})
-	alias := node.Tokens[1 : len(node.Tokens)-1]
-	r.WriteString(r.Option.AliasEmoji[string(alias)])
-	r.popFont()
 	return ast.WalkStop
 }
 
@@ -463,9 +460,6 @@ func (r *DocxRenderer) renderEmojiImg(node *ast.Node, entering bool) ast.WalkSta
 }
 
 func (r *DocxRenderer) renderEmojiUnicode(node *ast.Node, entering bool) ast.WalkStatus {
-	r.pushFont(&Font{"emoji", "R", r.fontSize})
-	r.Write(node.Tokens)
-	r.popFont()
 	return ast.WalkStop
 }
 
@@ -555,11 +549,11 @@ func (r *DocxRenderer) renderTableRow(node *ast.Node, entering bool) ast.WalkSta
 }
 
 func (r *DocxRenderer) renderTableHead(node *ast.Node, entering bool) ast.WalkStatus {
-	if entering {
-		r.pushFont(&Font{"bold", "B", r.fontSize})
-	} else {
-		r.popFont()
-	}
+	//if entering {
+	//	r.pushPara(&Font{"bold", "B", r.fontSize})
+	//} else {
+	//	r.popFont()
+	//}
 	return ast.WalkContinue
 }
 
@@ -765,22 +759,22 @@ func (r *DocxRenderer) renderEmphasis(node *ast.Node, entering bool) ast.WalkSta
 }
 
 func (r *DocxRenderer) renderEmAsteriskOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.pushFont(&Font{"italic", "I", r.fontSize})
+	r.peekPara().AddRun().Properties().SetItalic(true)
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderEmAsteriskCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popFont()
+	r.popRun()
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderEmUnderscoreOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.pushFont(&Font{"italic", "I", r.fontSize})
+	r.peekPara().AddRun().Properties().SetItalic(true)
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderEmUnderscoreCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popFont()
+	r.popRun()
 	return ast.WalkStop
 }
 
@@ -789,22 +783,22 @@ func (r *DocxRenderer) renderStrong(node *ast.Node, entering bool) ast.WalkStatu
 }
 
 func (r *DocxRenderer) renderStrongA6kOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.pushFont(&Font{"bold", "B", r.fontSize})
+	r.peekPara().AddRun().Properties().SetBold(true)
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrongA6kCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popFont()
+	r.popRun()
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrongU8eOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.pushFont(&Font{"bold", "B", r.fontSize})
+	r.peekPara().AddRun().Properties().SetBold(true)
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrongU8eCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popFont()
+	r.popRun()
 	return ast.WalkStop
 }
 
@@ -827,32 +821,40 @@ func (r *DocxRenderer) renderBlockquoteMarker(node *ast.Node, entering bool) ast
 }
 
 func (r *DocxRenderer) renderHeading(node *ast.Node, entering bool) ast.WalkStatus {
-	//if entering {
-	//	r.Newline()
-	//	r.pdf.SetY(r.pdf.GetY() + 10)
-	//	headingSize := r.heading2Size
-	//	switch node.HeadingLevel {
-	//	case 1:
-	//		headingSize = r.heading1Size
-	//	case 2:
-	//		headingSize = r.heading2Size
-	//	case 3:
-	//		headingSize = r.heading3Size
-	//	case 4:
-	//		headingSize = r.heading4Size
-	//	case 5:
-	//		headingSize = r.heading5Size
-	//	case 6:
-	//		headingSize = r.heading6Size
-	//	default:
-	//		headingSize = float64(r.fontSize)
-	//	}
-	//	r.pushFont(&Font{"bold", "B", int(math.Round(headingSize))})
-	//} else {
-	//	r.popFont()
-	//	r.pdf.SetY(r.pdf.GetY() + 6)
-	//	r.Newline()
-	//}
+	if entering {
+		para := r.doc.AddParagraph()
+		r.pushPara(&para)
+		run := para.AddRun()
+		r.pushRun(&run)
+		props := run.Properties()
+
+		switch node.HeadingLevel {
+		case 1:
+			props.SetSize(measurement.Distance(r.heading1Size))
+			props.SetStyle("Heading1")
+		case 2:
+			props.SetSize(measurement.Distance(r.heading2Size))
+			props.SetStyle("Heading2")
+		case 3:
+			props.SetSize(measurement.Distance(r.heading3Size))
+			props.SetStyle("Heading3")
+		case 4:
+			props.SetSize(measurement.Distance(r.heading4Size))
+			props.SetStyle("Heading4")
+		case 5:
+			props.SetSize(measurement.Distance(r.heading5Size))
+			props.SetStyle("Heading5")
+		case 6:
+			props.SetSize(measurement.Distance(r.heading6Size))
+			props.SetStyle("Heading6")
+		default:
+			props.SetSize(measurement.Distance(r.heading3Size))
+			props.SetStyle("Heading3")
+		}
+	} else {
+		r.popPara()
+		r.Newline()
+	}
 	return ast.WalkContinue
 }
 
@@ -941,18 +943,32 @@ func (r *DocxRenderer) popX() float64 {
 	return ret
 }
 
-func (r *DocxRenderer) pushFont(font *Font) {
-	r.fonts = append(r.fonts, font)
+func (r *DocxRenderer) pushPara(para *document.Paragraph) {
+	r.paragraphs = append(r.paragraphs, para)
 }
 
-func (r *DocxRenderer) popFont() *Font {
-	ret := r.fonts[len(r.fonts)-1]
-	r.fonts = r.fonts[:len(r.fonts)-1]
+func (r *DocxRenderer) popPara() *document.Paragraph {
+	ret := r.paragraphs[len(r.paragraphs)-1]
+	r.paragraphs = r.paragraphs[:len(r.paragraphs)-1]
 	return ret
 }
 
-func (r *DocxRenderer) peekFont() *Font {
-	return r.fonts[len(r.fonts)-1]
+func (r *DocxRenderer) peekPara() *document.Paragraph {
+	return r.paragraphs[len(r.paragraphs)-1]
+}
+
+func (r *DocxRenderer) pushRun(run *document.Run) {
+	r.runs = append(r.runs, run)
+}
+
+func (r *DocxRenderer) popRun() *document.Run {
+	ret := r.runs[len(r.runs)-1]
+	r.runs = r.runs[:len(r.runs)-1]
+	return ret
+}
+
+func (r *DocxRenderer) peekRun() *document.Run {
+	return r.runs[len(r.runs)-1]
 }
 
 func (r *DocxRenderer) pushTextColor(textColor *RGB) {
@@ -1044,7 +1060,8 @@ func (r *DocxRenderer) WriteString(content string) {
 		//	}
 		//	r.pdf.Cell(nil, buf.String())
 		//}
-		r.doc.AddParagraph().AddRun().AddText(content)
+		run := r.peekRun()
+		run.AddText(content)
 
 		r.LastOut = content[length-1]
 	}
@@ -1189,12 +1206,6 @@ func (r *DocxRenderer) renderFooter() {
 	//r.pdf.SetFont(font.family, font.style, font.size)
 	//textColor := r.peekTextColor()
 	//r.pdf.SetTextColor(textColor.R, textColor.G, textColor.B)
-}
-
-type Font struct {
-	family string
-	style  string // R|B|I|U
-	size   int
 }
 
 type RGB struct {
