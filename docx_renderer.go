@@ -869,40 +869,45 @@ func (r *DocxRenderer) renderList(node *ast.Node, entering bool) ast.WalkStatus 
 	if entering {
 		paragraph := r.doc.AddParagraph()
 		r.pushPara(&paragraph)
-		paragraph.SetNumberingLevel(2)
+
 		//	r.Newline()
 		//	r.pdf.SetY(r.pdf.GetY() + 4)
 		//	nestedLevel := r.countParentContainerBlocks(node)
 		//	indent := float64(nestedLevel * 16)
 		//	r.pdf.SetX(r.pdf.GetX() + indent)
-		//} else {
-		//	r.pdf.SetY(r.pdf.GetY() + 4)
-		//	r.Newline()
+	} else {
+		r.popPara()
 	}
 	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderListItem(node *ast.Node, entering bool) ast.WalkStatus {
-	//if entering {
-	//	if node.Parent.FirstChild != node {
-	//		nestedLevel := r.countParentContainerBlocks(node) - 1
-	//		indent := float64(nestedLevel * 16)
-	//		r.pdf.SetX(r.pdf.GetX() + indent)
-	//	}
-	//
-	//	if 3 == node.ListData.Typ && "" != r.Option.GFMTaskListItemClass &&
-	//		nil != node.FirstChild && nil != node.FirstChild.FirstChild && ast.NodeTaskListItemMarker == node.FirstChild.FirstChild.Type {
-	//		r.WriteString(fmt.Sprintf("%s", node.ListData.Marker))
-	//	} else {
-	//		if 0 != node.BulletChar {
-	//			r.WriteString("● ")
-	//		} else {
-	//			r.WriteString(fmt.Sprint(node.Num) + ". ")
-	//		}
-	//	}
-	//} else {
-	//	r.Newline()
-	//}
+	if entering {
+		//	if node.Parent.FirstChild != node {
+		//		nestedLevel := r.countParentContainerBlocks(node) - 1
+		//		indent := float64(nestedLevel * 16)
+		//		r.pdf.SetX(r.pdf.GetX() + indent)
+		//	}
+		//
+		//	if 3 == node.ListData.Typ && "" != r.Option.GFMTaskListItemClass &&
+		//		nil != node.FirstChild && nil != node.FirstChild.FirstChild && ast.NodeTaskListItemMarker == node.FirstChild.FirstChild.Type {
+		//		r.WriteString(fmt.Sprintf("%s", node.ListData.Marker))
+		//	} else {
+		//		if 0 != node.BulletChar {
+		//			r.WriteString("● ")
+		//		} else {
+		//			r.WriteString(fmt.Sprint(node.Num) + ". ")
+		//		}
+		//	}
+		paragraph := r.doc.AddParagraph()
+		r.pushPara(&paragraph)
+		definition := r.doc.Numbering.AddDefinition()
+		level := definition.AddLevel()
+		level.SetText("●")
+		paragraph.SetNumberingDefinition(definition)
+	} else {
+		r.popPara()
+	}
 	return ast.WalkContinue
 }
 
