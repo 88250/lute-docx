@@ -11,6 +11,8 @@
 package main
 
 import (
+	"github.com/unidoc/unioffice/color"
+	"github.com/unidoc/unioffice/schema/soo/wml"
 	"image"
 	"io/ioutil"
 	"math"
@@ -156,6 +158,13 @@ func (r *DocxRenderer) RenderCover() {
 // NewDocxRenderer 创建一个 HTML 渲染器。
 func NewDocxRenderer(tree *parse.Tree, regularFont, boldFont, italicFont string) *DocxRenderer {
 	doc := document.New()
+	hlStyle := doc.Styles.AddStyle("Hyperlink", wml.ST_StyleTypeCharacter, false)
+	hlStyle.SetName("Hyperlink")
+	hlStyle.SetBasedOn("DefaultParagraphFont")
+	hlStyle.RunProperties().Color().SetThemeColor(wml.ST_ThemeColorHyperlink)
+	clr := color.FromHex("#0563C1")
+	hlStyle.RunProperties().Color().SetColor(clr)
+	hlStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, clr)
 
 	ret := &DocxRenderer{BaseRenderer: render.NewBaseRenderer(tree), needRenderFootnotesDef: false, doc: doc}
 	ret.zoom = 0.8
@@ -568,28 +577,25 @@ func (r *DocxRenderer) renderTable(node *ast.Node, entering bool) ast.WalkStatus
 }
 
 func (r *DocxRenderer) renderStrikethrough(node *ast.Node, entering bool) ast.WalkStatus {
+	if entering {
+		r.peekRun().Properties().SetStrikeThrough(true)
+	}
 	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrikethrough1OpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	//r.pushX(r.pdf.GetX())
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrikethrough1CloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	//x := r.popX()
-	//r.pdf.Line(x, r.pdf.GetY()+float64(r.fontSize)/2, r.pdf.GetX(), r.pdf.GetY()+float64(r.fontSize)/2)
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrikethrough2OpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	//r.pushX(r.pdf.GetX())
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrikethrough2CloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	//x := r.popX()
-	//r.pdf.Line(x, r.pdf.GetY()+float64(r.fontSize)/2, r.pdf.GetX(), r.pdf.GetY()+float64(r.fontSize)/2)
 	return ast.WalkStop
 }
 
@@ -669,18 +675,26 @@ func (r *DocxRenderer) renderImage(node *ast.Node, entering bool) ast.WalkStatus
 }
 
 func (r *DocxRenderer) renderLink(node *ast.Node, entering bool) ast.WalkStatus {
-	//if entering {
-	//	r.pushX(r.pdf.GetX())
-	//	r.pushTextColor(&RGB{66, 133, 244})
-	//} else {
-	//	x := r.popX()
-	//	width := r.pdf.GetX() - x
-	//	dest := node.ChildByType(ast.NodeLinkDest)
-	//	destTokens := dest.Tokens
-	//	destTokens = r.Tree.Context.RelativePath(destTokens)
-	//	r.pdf.AddExternalLink(util.BytesToStr(destTokens), x, r.pdf.GetY(), width, r.lineHeight)
-	//	r.popTextColor()
-	//}
+	if entering {
+		dest := node.ChildByType(ast.NodeLinkDest)
+		destTokens := dest.Tokens
+		destTokens = r.Tree.Context.RelativePath(destTokens)
+		para := r.peekPara()
+		link := para.AddHyperLink()
+		link.SetTarget(util.BytesToStr(destTokens))
+		run := link.AddRun()
+		run.Properties().SetStyle("Hyperlink")
+		r.pushRun(&run)
+	} else {
+		r.popRun()
+		if nil != r.peekRun() {
+			// 如果链接之前有输出的话需要先结束掉，然后重新开一个
+			r.popRun()
+			para := r.peekPara()
+			run := para.AddRun()
+			r.pushRun(&run)
+		}
+	}
 	return ast.WalkContinue
 }
 
@@ -731,6 +745,7 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 		if !inList {
 			r.peekRun().AddBreak()
 			r.popRun()
+			r.popPara()
 		}
 	}
 	return ast.WalkContinue
@@ -760,11 +775,14 @@ func (r *DocxRenderer) renderCodeSpanCloseMarker(node *ast.Node, entering bool) 
 }
 
 func (r *DocxRenderer) renderEmphasis(node *ast.Node, entering bool) ast.WalkStatus {
+	if entering {
+		r.peekRun().Properties().SetItalic(true)
+	}
 	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmAsteriskOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.peekPara().AddRun().Properties().SetItalic(true)
+
 	return ast.WalkStop
 }
 
@@ -774,7 +792,6 @@ func (r *DocxRenderer) renderEmAsteriskCloseMarker(node *ast.Node, entering bool
 }
 
 func (r *DocxRenderer) renderEmUnderscoreOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.peekPara().AddRun().Properties().SetItalic(true)
 	return ast.WalkStop
 }
 
@@ -784,11 +801,14 @@ func (r *DocxRenderer) renderEmUnderscoreCloseMarker(node *ast.Node, entering bo
 }
 
 func (r *DocxRenderer) renderStrong(node *ast.Node, entering bool) ast.WalkStatus {
+	if entering {
+		r.peekRun().Properties().SetBold(true)
+	}
 	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrongA6kOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.peekPara().AddRun().Properties().SetBold(true)
+
 	return ast.WalkStop
 }
 
@@ -798,7 +818,6 @@ func (r *DocxRenderer) renderStrongA6kCloseMarker(node *ast.Node, entering bool)
 }
 
 func (r *DocxRenderer) renderStrongU8eOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.peekPara().AddRun().Properties().SetBold(true)
 	return ast.WalkStop
 }
 
@@ -960,9 +979,6 @@ func (r *DocxRenderer) popPara() *document.Paragraph {
 }
 
 func (r *DocxRenderer) peekPara() *document.Paragraph {
-	if 1 > len(r.paragraphs) {
-		return nil
-	}
 	return r.paragraphs[len(r.paragraphs)-1]
 }
 
@@ -977,9 +993,6 @@ func (r *DocxRenderer) popRun() *document.Run {
 }
 
 func (r *DocxRenderer) peekRun() *document.Run {
-	if 1 > len(r.runs) {
-		return nil
-	}
 	return r.runs[len(r.runs)-1]
 }
 
@@ -1018,20 +1031,9 @@ func (r *DocxRenderer) Write(content []byte) {
 
 // WriteString 输出指定的字符串 content。
 func (r *DocxRenderer) WriteString(content string) {
-	content = strings.TrimSpace(content)
 	if length := len(content); 0 < length {
 		run := r.peekRun()
-		if nil == run {
-			para := r.peekPara()
-			if nil == para {
-				paragraph := r.doc.AddParagraph()
-				para = &paragraph
-			}
-			rn := para.AddRun()
-			run = &rn
-		}
 		run.AddText(content)
-
 		r.LastOut = content[length-1]
 	}
 }
