@@ -722,11 +722,12 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 
 	if entering {
 		if !inList {
-			r.Newline()
-			//r.pdf.SetY(r.pdf.GetY() + 6)
+			para := r.doc.AddParagraph()
+			r.pushPara(&para)
 		}
 	} else {
-		r.Newline()
+		r.peekRun().AddBreak()
+		r.popRun()
 	}
 	return ast.WalkContinue
 }
@@ -827,6 +828,7 @@ func (r *DocxRenderer) renderHeading(node *ast.Node, entering bool) ast.WalkStat
 		run := para.AddRun()
 		r.pushRun(&run)
 		props := run.Properties()
+		props.SetBold(true)
 
 		switch node.HeadingLevel {
 		case 1:
@@ -864,16 +866,19 @@ func (r *DocxRenderer) renderHeadingC8hMarker(node *ast.Node, entering bool) ast
 }
 
 func (r *DocxRenderer) renderList(node *ast.Node, entering bool) ast.WalkStatus {
-	//if entering {
-	//	r.Newline()
-	//	r.pdf.SetY(r.pdf.GetY() + 4)
-	//	nestedLevel := r.countParentContainerBlocks(node)
-	//	indent := float64(nestedLevel * 16)
-	//	r.pdf.SetX(r.pdf.GetX() + indent)
-	//} else {
-	//	r.pdf.SetY(r.pdf.GetY() + 4)
-	//	r.Newline()
-	//}
+	if entering {
+		paragraph := r.doc.AddParagraph()
+		r.pushPara(&paragraph)
+		paragraph.SetNumberingLevel(2)
+		//	r.Newline()
+		//	r.pdf.SetY(r.pdf.GetY() + 4)
+		//	nestedLevel := r.countParentContainerBlocks(node)
+		//	indent := float64(nestedLevel * 16)
+		//	r.pdf.SetX(r.pdf.GetX() + indent)
+		//} else {
+		//	r.pdf.SetY(r.pdf.GetY() + 4)
+		//	r.Newline()
+	}
 	return ast.WalkContinue
 }
 
@@ -1015,59 +1020,6 @@ func (r *DocxRenderer) Write(content []byte) {
 func (r *DocxRenderer) WriteString(content string) {
 	content = strings.TrimSpace(content)
 	if length := len(content); 0 < length {
-		//buf := bytes.Buffer{}
-		//x := r.pdf.GetX()
-		//startX := x
-		//runes := []rune(content)
-		//pageRight := r.pageSize.W - r.margin
-		//font := r.peekFont()
-		//if nil != font {
-		//	r.pdf.SetFont(font.family, font.style, font.size)
-		//}
-		//textColor := r.peekTextColor()
-		//if nil != textColor {
-		//	r.pdf.SetTextColor(textColor.R, textColor.G, textColor.B)
-		//}
-		//
-		//for i, c := range runes {
-		//	if r.pdf.GetY() > r.pageSize.H-r.margin*2 {
-		//		r.addPage()
-		//	}
-		//
-		//	if '\n' == c {
-		//		if 0 < buf.Len() {
-		//			r.pdf.Cell(nil, buf.String())
-		//			buf.Reset()
-		//		}
-		//
-		//		r.pdf.Br(float64(r.fontSize) + 2)
-		//		r.pdf.SetX(startX)
-		//		x = startX
-		//		continue
-		//	}
-		//
-		//	width, _ := r.pdf.MeasureTextWidth(string(c))
-		//	if i < len(runes)-1 {
-		//		nextC := runes[i+1]
-		//		nextWidth, _ := r.pdf.MeasureTextWidth(string(nextC))
-		//		if x+width+nextWidth > pageRight {
-		//			r.pdf.Cell(nil, buf.String())
-		//			buf.Reset()
-		//			r.pdf.Br(float64(r.fontSize) + 2)
-		//			x = r.pdf.GetX()
-		//			continue
-		//		}
-		//	}
-		//
-		//	buf.WriteRune(c)
-		//	x += width
-		//}
-		//if 0 < buf.Len() {
-		//	if r.pdf.GetY() > r.pageSize.H-r.margin*2 {
-		//		r.addPage()
-		//	}
-		//	r.pdf.Cell(nil, buf.String())
-		//}
 		run := r.peekRun()
 		if nil == run {
 			para := r.peekPara()
@@ -1089,8 +1041,7 @@ func (r *DocxRenderer) WriteString(content string) {
 // Newline 会在最新内容不是换行符 \n 时输出一个换行符。
 func (r *DocxRenderer) Newline() {
 	if lex.ItemNewline != r.LastOut {
-		paragraph := r.doc.AddParagraph()
-		paragraph.AddRun().AddBreak()
+		r.doc.AddParagraph()
 		r.LastOut = lex.ItemNewline
 	}
 }
