@@ -724,10 +724,14 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 		if !inList {
 			para := r.doc.AddParagraph()
 			r.pushPara(&para)
+			run := para.AddRun()
+			r.pushRun(&run)
 		}
 	} else {
-		r.peekRun().AddBreak()
-		r.popRun()
+		if !inList {
+			r.peekRun().AddBreak()
+			r.popRun()
+		}
 	}
 	return ast.WalkContinue
 }
@@ -866,17 +870,8 @@ func (r *DocxRenderer) renderHeadingC8hMarker(node *ast.Node, entering bool) ast
 }
 
 func (r *DocxRenderer) renderList(node *ast.Node, entering bool) ast.WalkStatus {
-	if entering {
-		paragraph := r.doc.AddParagraph()
-		r.pushPara(&paragraph)
-
-		//	r.Newline()
-		//	r.pdf.SetY(r.pdf.GetY() + 4)
-		//	nestedLevel := r.countParentContainerBlocks(node)
-		//	indent := float64(nestedLevel * 16)
-		//	r.pdf.SetX(r.pdf.GetX() + indent)
-	} else {
-		r.popPara()
+	if !entering {
+		r.Newline()
 	}
 	return ast.WalkContinue
 }
@@ -1031,11 +1026,9 @@ func (r *DocxRenderer) WriteString(content string) {
 			if nil == para {
 				paragraph := r.doc.AddParagraph()
 				para = &paragraph
-				r.pushPara(para)
 			}
 			rn := para.AddRun()
 			run = &rn
-			r.pushRun(run)
 		}
 		run.AddText(content)
 
