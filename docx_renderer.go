@@ -11,8 +11,6 @@
 package main
 
 import (
-	"github.com/unidoc/unioffice/color"
-	"github.com/unidoc/unioffice/schema/soo/wml"
 	"image"
 	"io/ioutil"
 	"math"
@@ -28,8 +26,10 @@ import (
 	"github.com/88250/lute/parse"
 	"github.com/88250/lute/render"
 	"github.com/88250/lute/util"
+	"github.com/unidoc/unioffice/color"
 	"github.com/unidoc/unioffice/document"
 	"github.com/unidoc/unioffice/measurement"
+	"github.com/unidoc/unioffice/schema/soo/wml"
 )
 
 // DocxRenderer 描述了 PDF 渲染器。
@@ -731,6 +731,13 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 	}
 
 	if inTightList { // List.ListItem.Paragraph
+		if entering {
+			para := r.peekPara()
+			run := para.AddRun()
+			r.pushRun(&run)
+		} else {
+			r.popRun()
+		}
 		return ast.WalkContinue
 	}
 
