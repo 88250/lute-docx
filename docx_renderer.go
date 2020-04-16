@@ -853,6 +853,7 @@ func (r *DocxRenderer) renderHeading(node *ast.Node, entering bool) ast.WalkStat
 		}
 	} else {
 		r.popPara()
+		r.popRun()
 		r.Newline()
 	}
 	return ast.WalkContinue
@@ -954,6 +955,9 @@ func (r *DocxRenderer) popPara() *document.Paragraph {
 }
 
 func (r *DocxRenderer) peekPara() *document.Paragraph {
+	if 1 > len(r.paragraphs) {
+		return nil
+	}
 	return r.paragraphs[len(r.paragraphs)-1]
 }
 
@@ -968,6 +972,9 @@ func (r *DocxRenderer) popRun() *document.Run {
 }
 
 func (r *DocxRenderer) peekRun() *document.Run {
+	if 1 > len(r.runs) {
+		return nil
+	}
 	return r.runs[len(r.runs)-1]
 }
 
@@ -1006,6 +1013,7 @@ func (r *DocxRenderer) Write(content []byte) {
 
 // WriteString 输出指定的字符串 content。
 func (r *DocxRenderer) WriteString(content string) {
+	content = strings.TrimSpace(content)
 	if length := len(content); 0 < length {
 		//buf := bytes.Buffer{}
 		//x := r.pdf.GetX()
@@ -1061,6 +1069,17 @@ func (r *DocxRenderer) WriteString(content string) {
 		//	r.pdf.Cell(nil, buf.String())
 		//}
 		run := r.peekRun()
+		if nil == run {
+			para := r.peekPara()
+			if nil == para {
+				paragraph := r.doc.AddParagraph()
+				para = &paragraph
+				r.pushPara(para)
+			}
+			rn := para.AddRun()
+			run = &rn
+			r.pushRun(run)
+		}
 		run.AddText(content)
 
 		r.LastOut = content[length-1]
