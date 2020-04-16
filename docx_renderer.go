@@ -28,12 +28,13 @@ import (
 	"github.com/88250/lute/render"
 	"github.com/88250/lute/util"
 	"github.com/unidoc/unioffice/color"
+	"github.com/unidoc/unioffice/common"
 	"github.com/unidoc/unioffice/document"
 	"github.com/unidoc/unioffice/measurement"
 	"github.com/unidoc/unioffice/schema/soo/wml"
 )
 
-// DocxRenderer 描述了 PDF 渲染器。
+// DocxRenderer 描述了 DOCX 渲染器。
 type DocxRenderer struct {
 	*render.BaseRenderer
 	needRenderFootnotesDef bool
@@ -58,9 +59,10 @@ type DocxRenderer struct {
 	paragraphs   []*document.Paragraph // 当前段落栈
 	runs         []*document.Run       // 当前排版栈
 	textColors   []*RGB                // 当前文本颜色栈
+	images       []string              // 生成图片后待清理的临时文件路径
 }
 
-// DocxCover 描述了 PDF 封面。
+// DocxCover 描述了 DOCX 封面。
 type DocxCover struct {
 	Title         string // 标题
 	AuthorLabel   string // 作者：
@@ -667,38 +669,34 @@ func (r *DocxRenderer) renderBang(node *ast.Node, entering bool) ast.WalkStatus 
 }
 
 func (r *DocxRenderer) renderImage(node *ast.Node, entering bool) ast.WalkStatus {
-	//if entering {
-	//	if 0 == r.DisableTags {
-	//		destTokens := node.ChildByType(ast.NodeLinkDest).Tokens
-	//		src := util.BytesToStr(destTokens)
-	//		src, ok, isTemp := r.downloadImg(src)
-	//		if ok {
-	//			_, height := r.getImgSize(src)
-	//			y := r.pdf.GetY()
-	//			if math.Ceil(y)+height > math.Floor(r.pageSize.H-r.margin) {
-	//				r.addPage()
-	//			}
-	//			r.pdf.Image(src, r.pdf.GetX(), r.pdf.GetY(), nil)
-	//			r.pdf.SetY(r.pdf.GetY() + height)
-	//			if isTemp {
-	//				os.Remove(src)
-	//			}
-	//		}
-	//	}
-	//	r.DisableTags++
-	//	return ast.WalkContinue
-	//}
-	//
-	//r.DisableTags--
-	//if 0 == r.DisableTags {
-	//	//r.WriteString("\"")
-	//	//if title := node.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
-	//	//	r.WriteString(" title=\"")
-	//	//	r.Write(title.Tokens)
-	//	//	r.WriteString("\"")
-	//	//}
-	//	//r.WriteString(" />")
-	//}
+	if entering {
+		if 0 == r.DisableTags {
+			destTokens := node.ChildByType(ast.NodeLinkDest).Tokens
+			src := util.BytesToStr(destTokens)
+			src, ok, isTemp := r.downloadImg(src)
+			if ok {
+				img, _ := common.ImageFromFile(src)
+				imgRef, _ := r.doc.AddImage(img)
+				r.peekRun().AddDrawingInline(imgRef)
+				if isTemp {
+					r.images = append(r.images, src)
+				}
+			}
+		}
+		r.DisableTags++
+		return ast.WalkContinue
+	}
+
+	r.DisableTags--
+	if 0 == r.DisableTags {
+		//r.WriteString("\"")
+		//if title := node.ChildByType(ast.NodeLinkTitle); nil != title && nil != title.Tokens {
+		//	r.WriteString(" title=\"")
+		//	r.Write(title.Tokens)
+		//	r.WriteString("\"")
+		//}
+		//r.WriteString(" />")
+	}
 	return ast.WalkContinue
 }
 
@@ -738,7 +736,11 @@ func (r *DocxRenderer) renderDocument(node *ast.Node, entering bool) ast.WalkSta
 }
 
 func (r *DocxRenderer) Save(docxPath string) {
-	if err := r.doc.SaveToFile(docxPath); nil != err {
+	err := r.doc.SaveToFile(docxPath)
+	for _, img := range r.images {
+		os.Remove(img)
+	}
+	if nil != err {
 		logger.Fatal(err)
 	}
 }
@@ -859,10 +861,7 @@ func (r *DocxRenderer) renderBlockquote(node *ast.Node, entering bool) ast.WalkS
 	if entering {
 		r.Newline()
 		r.pushTextColor(&RGB{106, 115, 125})
-		//r.pushX(r.pdf.GetX())
 	} else {
-		//x := r.popX()
-		//r.pdf.SetX(r.pdf.GetX() - x + r.margin)
 		r.popTextColor()
 		r.Newline()
 	}
@@ -1101,7 +1100,7 @@ func (r *DocxRenderer) downloadImg(src string) (localPath string, ok, isTemp boo
 	}
 	req := &http.Request{
 		Header: http.Header{
-			"User-Agent": []string{"Lute-PDF; +https://github.com/88250/lute-pdf"},
+			"User-Agent": []string{"Lute-DOCX; +https://github.com/88250/lute-docx"},
 		},
 		URL: u,
 	}
@@ -1117,7 +1116,7 @@ func (r *DocxRenderer) downloadImg(src string) (localPath string, ok, isTemp boo
 	}
 
 	data, err := ioutil.ReadAll(resp.Body)
-	file, err := ioutil.TempFile("", "lute-pdf.img.")
+	file, err := ioutil.TempFile("", "lute-docx.img.")
 	if nil != err {
 		logger.Warnf("create temp image [%s] failed: %s", src, err)
 		return src, false, false
