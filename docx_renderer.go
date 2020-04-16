@@ -11,6 +11,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"io/ioutil"
 	"math"
@@ -904,28 +905,30 @@ func (r *DocxRenderer) renderList(node *ast.Node, entering bool) ast.WalkStatus 
 
 func (r *DocxRenderer) renderListItem(node *ast.Node, entering bool) ast.WalkStatus {
 	if entering {
-		//	if node.Parent.FirstChild != node {
-		//		nestedLevel := r.countParentContainerBlocks(node) - 1
-		//		indent := float64(nestedLevel * 16)
-		//		r.pdf.SetX(r.pdf.GetX() + indent)
-		//	}
-		//
-		//	if 3 == node.ListData.Typ && "" != r.Option.GFMTaskListItemClass &&
-		//		nil != node.FirstChild && nil != node.FirstChild.FirstChild && ast.NodeTaskListItemMarker == node.FirstChild.FirstChild.Type {
-		//		r.WriteString(fmt.Sprintf("%s", node.ListData.Marker))
-		//	} else {
-		//		if 0 != node.BulletChar {
-		//			r.WriteString("● ")
-		//		} else {
-		//			r.WriteString(fmt.Sprint(node.Num) + ". ")
-		//		}
-		//	}
 		paragraph := r.doc.AddParagraph()
 		r.pushPara(&paragraph)
-		definition := r.doc.Numbering.AddDefinition()
-		level := definition.AddLevel()
-		level.SetText("●")
-		paragraph.SetNumberingDefinition(definition)
+
+		nestedLevel := r.countParentContainerBlocks(node) - 1
+		indent := float64(nestedLevel * 22)
+
+		if 3 == node.ListData.Typ && "" != r.Option.GFMTaskListItemClass &&
+			nil != node.FirstChild && nil != node.FirstChild.FirstChild && ast.NodeTaskListItemMarker == node.FirstChild.FirstChild.Type {
+			r.WriteString(fmt.Sprintf("%s", node.ListData.Marker))
+		} else {
+			definition := r.doc.Numbering.AddDefinition()
+			level := definition.AddLevel()
+			level.Properties().SetLeftIndent(measurement.Distance(indent))
+			if 0 != node.BulletChar {
+				level.SetFormat(wml.ST_NumberFormatBullet)
+				level.RunProperties().SetSize(6)
+				level.SetText("●")
+			} else {
+				level.Properties().SetStartIndent(30)
+				level.SetFormat(wml.ST_NumberFormatDecimal)
+				level.SetText(fmt.Sprint(node.Num) + ".")
+			}
+			paragraph.SetNumberingDefinition(definition)
+		}
 	} else {
 		r.popPara()
 	}
