@@ -52,10 +52,8 @@ type DocxRenderer struct {
 	heading5Size float64               // 五级标题大小
 	heading6Size float64               // 六级标题大小
 	margin       float64               // 页边距
-	x            []float64             // 当前横坐标栈
 	paragraphs   []*document.Paragraph // 当前段落栈
 	runs         []*document.Run       // 当前排版栈
-	textColors   []*RGB                // 当前文本颜色栈
 	images       []string              // 生成图片后待清理的临时文件路径
 }
 
@@ -196,8 +194,6 @@ func NewDocxRenderer(tree *parse.Tree) *DocxRenderer {
 	ret.heading5Size = 16 * ret.zoom
 	ret.heading6Size = 14 * ret.zoom
 	ret.margin = 60 * ret.zoom
-
-	ret.pushTextColor(&RGB{0, 0, 0})
 
 	ret.RendererFuncs[ast.NodeDocument] = ret.renderDocument
 	ret.RendererFuncs[ast.NodeParagraph] = ret.renderParagraph
@@ -869,9 +865,7 @@ func (r *DocxRenderer) renderStrongU8eCloseMarker(node *ast.Node, entering bool)
 func (r *DocxRenderer) renderBlockquote(node *ast.Node, entering bool) ast.WalkStatus {
 	if entering {
 		r.Newline()
-		r.pushTextColor(&RGB{106, 115, 125})
 	} else {
-		r.popTextColor()
 		r.Newline()
 	}
 	return ast.WalkContinue
@@ -997,16 +991,6 @@ func (r *DocxRenderer) renderSoftBreak(node *ast.Node, entering bool) ast.WalkSt
 	return ast.WalkStop
 }
 
-func (r *DocxRenderer) pushX(x float64) {
-	r.x = append(r.x, x)
-}
-
-func (r *DocxRenderer) popX() float64 {
-	ret := r.x[len(r.x)-1]
-	r.x = r.x[:len(r.x)-1]
-	return ret
-}
-
 func (r *DocxRenderer) pushPara(para *document.Paragraph) {
 	r.paragraphs = append(r.paragraphs, para)
 }
@@ -1037,20 +1021,6 @@ func (r *DocxRenderer) peekRun() *document.Run {
 	}
 
 	return r.runs[len(r.runs)-1]
-}
-
-func (r *DocxRenderer) pushTextColor(textColor *RGB) {
-	r.textColors = append(r.textColors, textColor)
-}
-
-func (r *DocxRenderer) popTextColor() *RGB {
-	ret := r.textColors[len(r.textColors)-1]
-	r.textColors = r.textColors[:len(r.textColors)-1]
-	return ret
-}
-
-func (r *DocxRenderer) peekTextColor() *RGB {
-	return r.textColors[len(r.textColors)-1]
 }
 
 func (r *DocxRenderer) countParentContainerBlocks(n *ast.Node) (ret int) {
@@ -1218,8 +1188,4 @@ func (r *DocxRenderer) renderFooter() {
 	//r.pdf.SetFont(font.family, font.style, font.size)
 	//textColor := r.peekTextColor()
 	//r.pdf.SetTextColor(textColor.R, textColor.G, textColor.B)
-}
-
-type RGB struct {
-	R, G, B uint8
 }
