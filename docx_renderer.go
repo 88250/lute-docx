@@ -39,10 +39,7 @@ type DocxRenderer struct {
 	*render.BaseRenderer
 	needRenderFootnotesDef bool
 
-	Cover       *DocxCover // 封面
-	RegularFont string     // 正常字体文件路径
-	BoldFont    string     // 粗体字体文件路径
-	ItalicFont  string     // 斜体字体文件路径
+	Cover *DocxCover // 封面
 
 	doc          *document.Document    // DOCX 生成器句柄
 	zoom         float64               // 字体、行高大小倍数
@@ -159,7 +156,7 @@ func (r *DocxRenderer) RenderCover() {
 }
 
 // NewDocxRenderer 创建一个 HTML 渲染器。
-func NewDocxRenderer(tree *parse.Tree, regularFont, boldFont, italicFont string) *DocxRenderer {
+func NewDocxRenderer(tree *parse.Tree) *DocxRenderer {
 	doc := document.New()
 	linkStyle := doc.Styles.AddStyle("Hyperlink", wml.ST_StyleTypeCharacter, false)
 	linkStyle.SetName("Hyperlink")
@@ -193,10 +190,6 @@ func NewDocxRenderer(tree *parse.Tree, regularFont, boldFont, italicFont string)
 	ret.heading5Size = 16 * ret.zoom
 	ret.heading6Size = 14 * ret.zoom
 	ret.margin = 60 * ret.zoom
-
-	ret.RegularFont = regularFont
-	ret.BoldFont = boldFont
-	ret.ItalicFont = italicFont
 
 	//ret.pageSize = gopdf.PageSizeA4
 	//pdf.Start(gopdf.Config{PageSize: *ret.pageSize})

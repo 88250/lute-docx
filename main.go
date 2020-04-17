@@ -31,10 +31,6 @@ func main() {
 	argMdPath := flag.String("mdPath", "D:/88250/lute-docx/sample.md", "待转换的 Markdown 文件路径")
 	argSavePath := flag.String("savePath", "D:/88250/lute-docx/sample.docx", "转换后 DOCX 的保存路径")
 
-	argRegularFontPath := flag.String("regularFontPath", "D:/88250/lute-docx/fonts/msyh.ttf", "正常字体文件路径")
-	argBoldFontPath := flag.String("boldFontPath", "D:/88250/lute-docx/fonts/msyhb.ttf", "粗体字体文件路径")
-	argItalicFontPath := flag.String("italicFontPath", "D:/88250/lute-docx/fonts/msyhl.ttf", "斜体字体文件路径")
-
 	argCoverTitle := flag.String("coverTitle", "Lute DOCX - Markdown 生成 DOCX", "封面 - 标题")
 	argCoverAuthor := flag.String("coverAuthor", "88250", "封面 - 作者")
 	argCoverAuthorLink := flag.String("coverAuthorLink", "https://hacpai.com/member/88250", "封面 - 作者链接")
@@ -51,10 +47,6 @@ func main() {
 
 	mdPath := trimQuote(*argMdPath)
 	savePath := trimQuote(*argSavePath)
-
-	regularFontPath := trimQuote(*argRegularFontPath)
-	boldFontPath := trimQuote(*argBoldFontPath)
-	italicFontPath := trimQuote(*argItalicFontPath)
 
 	coverTitle := trimQuote(*argCoverTitle)
 	coverAuthorLabel := "　　作者："
@@ -94,7 +86,7 @@ func main() {
 	}
 
 	tree := parse.Parse("", markdown, options)
-	renderer := NewDocxRenderer(tree, regularFontPath, boldFontPath, italicFontPath)
+	renderer := NewDocxRenderer(tree)
 	renderer.Cover = &DocxCover{
 		Title:         coverTitle,
 		AuthorLabel:   coverAuthorLabel,
