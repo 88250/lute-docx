@@ -8,19 +8,12 @@ Lute DOCX 是一款将 Markdown 文本转换为 Word 文档 (.docx) 的小工具
 * 图片会通过地址自动拉取并渲染
 * 支持封面配置
 
-## 截图
-
-TBD
-
 ## 用法
 
 命令行参数说明：
 
 * `--mdPath`：待转换的 Markdown 文件路径
 * `--savePath`：转换后 DOCX 的保存路径
-* `--regularFontPath`：正常字体文件路径
-* `--boldFontPath`：粗体字体文件路径
-* `--italicFontPath`：斜体字体文件路径
 * `--coverTitle`：封面 - 标题
 * `--coverAuthor`：封面 - 作者
 * `--coverAuthorLink`：封面 - 作者链接
