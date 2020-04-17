@@ -79,80 +79,86 @@ type DocxCover struct {
 }
 
 func (r *DocxRenderer) RenderCover() {
-	//r.pdf.AddPage()
-	//
-	//logoImgPath, ok, isTemp := r.downloadImg(r.Cover.LogoLink)
-	//if ok {
-	//	imgW, imgH := r.getImgSize(logoImgPath)
-	//	x := (r.pageSize.W)/2 - imgW/2
-	//	y := r.pageSize.H/2 - r.margin - 128
-	//	r.pdf.Image(logoImgPath, x, y, nil)
-	//	r.pdf.SetY(y)
-	//	r.pdf.Br(imgH + 10)
-	//	r.pdf.SetFontWithStyle("regular", gopdf.Regular, 20)
-	//	width, _ := r.pdf.MeasureTextWidth(r.Cover.LogoTitle)
-	//	x = (r.pageSize.W)/2 - width/2
-	//	r.pdf.SetX(x)
-	//	y = r.pdf.GetY()
-	//	r.pdf.Cell(nil, r.Cover.LogoTitle)
-	//	r.pdf.AddExternalLink(r.Cover.LogoTitleLink, x, y, width, 20)
-	//	r.pdf.Br(48)
-	//	if isTemp {
-	//		os.Remove(logoImgPath)
-	//	}
-	//}
-	//
-	//r.pdf.SetFontWithStyle("regular", gopdf.Regular, 28)
-	//lines, _ := r.pdf.SplitText(r.Cover.Title, r.pageSize.W-r.margin)
-	//for _, line := range lines {
-	//	width, _ := r.pdf.MeasureTextWidth(line)
-	//	x := (r.pageSize.W)/2 - width/2
-	//	r.pdf.SetX(x)
-	//	r.pdf.Cell(nil, line)
-	//	r.pdf.Br(30)
-	//}
-	//
-	//fontSize := 12
-	//r.pdf.Br(45)
-	//r.pdf.SetX(r.margin)
-	//r.pdf.SetFontWithStyle("regular", gopdf.Regular, fontSize)
-	//r.pdf.Cell(nil, r.Cover.AuthorLabel)
-	//x := r.pdf.GetX()
-	//width, _ := r.pdf.MeasureTextWidth(r.Cover.Author)
-	//r.pdf.SetTextColor(66, 133, 244)
-	//r.pdf.Cell(nil, r.Cover.Author)
-	//r.pdf.AddExternalLink(r.Cover.AuthorLink, x, r.pdf.GetY(), width, float64(fontSize))
-	//r.pdf.SetTextColor(0, 0, 0)
-	//r.pdf.Br(22)
-	//
-	//r.pdf.Cell(nil, r.Cover.LinkLabel)
-	//x = r.pdf.GetX()
-	//width, _ = r.pdf.MeasureTextWidth(r.Cover.Link)
-	//r.pdf.SetTextColor(66, 133, 244)
-	//r.pdf.Cell(nil, r.Cover.Link)
-	//r.pdf.AddExternalLink(r.Cover.Link, x, r.pdf.GetY(), width, float64(fontSize))
-	//r.pdf.SetTextColor(0, 0, 0)
-	//r.pdf.Br(22)
-	//
-	//r.pdf.Cell(nil, r.Cover.SourceLabel)
-	//x = r.pdf.GetX()
-	//width, _ = r.pdf.MeasureTextWidth(r.Cover.Source)
-	//r.pdf.SetTextColor(66, 133, 244)
-	//r.pdf.Cell(nil, r.Cover.Source)
-	//r.pdf.AddExternalLink(r.Cover.SourceLink, x, r.pdf.GetY(), width, float64(fontSize))
-	//r.pdf.SetTextColor(0, 0, 0)
-	//r.pdf.Br(22)
-	//
-	//r.pdf.Cell(nil, r.Cover.LicenseLabel)
-	//x = r.pdf.GetX()
-	//width, _ = r.pdf.MeasureTextWidth(r.Cover.License)
-	//r.pdf.SetTextColor(66, 133, 244)
-	//r.pdf.Cell(nil, r.Cover.License)
-	//r.pdf.AddExternalLink(r.Cover.LicenseLink, x, r.pdf.GetY(), width, float64(fontSize))
-	//r.pdf.SetTextColor(0, 0, 0)
-	//r.pdf.Br(20)
-	//
-	//r.pdf.AddPage()
+	para := r.doc.AddParagraph()
+	run := para.AddRun()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+	logoImgPath, ok, isTemp := r.downloadImg(r.Cover.LogoLink)
+	if ok {
+		img, _ := common.ImageFromFile(logoImgPath)
+		imgRef, _ := r.doc.AddImage(img)
+		para.Properties().SetAlignment(wml.ST_JcCenter)
+		inline, _ := run.AddDrawingInline(imgRef)
+		width, height := r.getImgSize(logoImgPath)
+		inline.SetSize(measurement.Distance(width), measurement.Distance(height))
+
+		if isTemp {
+			r.images = append(r.images, logoImgPath)
+		}
+	}
+
+	run.AddBreak()
+	run.AddBreak()
+	run.AddText(r.Cover.LogoTitle)
+	run.AddBreak()
+	run.AddBreak()
+
+	run = para.AddRun()
+	run.Properties().SetSize(28)
+	run.AddText(r.Cover.Title)
+	run.AddBreak()
+	run.AddBreak()
+	run.AddBreak()
+
+	para = r.doc.AddParagraph()
+	run = para.AddRun()
+	run.Properties().SetSize(12)
+	run.AddText(r.Cover.AuthorLabel)
+	link := para.AddHyperLink()
+	link.SetTarget(r.Cover.AuthorLink)
+	run = link.AddRun()
+	run.Properties().SetStyle("Hyperlink")
+	run.AddText(r.Cover.Author)
+	run.AddBreak()
+
+	run = para.AddRun()
+	run.Properties().SetSize(12)
+	run.AddText(r.Cover.LinkLabel)
+	link = para.AddHyperLink()
+	link.SetTarget(r.Cover.Link)
+	run = link.AddRun()
+	run.Properties().SetStyle("Hyperlink")
+	run.AddText(r.Cover.Link)
+	run.AddBreak()
+
+	run = para.AddRun()
+	run.Properties().SetSize(12)
+	run.AddText(r.Cover.SourceLabel)
+	link = para.AddHyperLink()
+	link.SetTarget(r.Cover.Source)
+	run = link.AddRun()
+	run.Properties().SetStyle("Hyperlink")
+	run.AddText(r.Cover.Source)
+	run.AddBreak()
+
+	run = para.AddRun()
+	run.Properties().SetSize(12)
+	run.AddText(r.Cover.LicenseLabel)
+	link = para.AddHyperLink()
+	link.SetTarget(r.Cover.LicenseLink)
+	run = link.AddRun()
+	run.Properties().SetStyle("Hyperlink")
+	run.AddText(r.Cover.License)
+	run.AddBreak()
+
+	run.AddPageBreak()
 }
 
 // NewDocxRenderer 创建一个 HTML 渲染器。
@@ -191,32 +197,7 @@ func NewDocxRenderer(tree *parse.Tree) *DocxRenderer {
 	ret.heading6Size = 14 * ret.zoom
 	ret.margin = 60 * ret.zoom
 
-	//ret.pageSize = gopdf.PageSizeA4
-	//pdf.Start(gopdf.Config{PageSize: *ret.pageSize})
-	//
-	//var err error
-	//err = pdf.AddTTFFont("regular", ret.RegularFont)
-	//if err != nil {
-	//	logger.Fatal(err)
-	//}
-	//
-	//err = pdf.AddTTFFontWithOption("bold", ret.BoldFont, gopdf.TtfOption{Style: gopdf.Bold})
-	//if err != nil {
-	//	logger.Fatal(err)
-	//}
-	//
-	//err = pdf.AddTTFFontWithOption("italic", ret.ItalicFont, gopdf.TtfOption{Style: gopdf.Italic})
-	//if err != nil {
-	//	logger.Fatal(err)
-	//}
-
-	//err = pdf.AddTTFFont("emoji", "fonts/seguiemj.ttf")
-	//if err != nil {
-	//	logger.Fatal(err)
-	//}
-
 	ret.pushTextColor(&RGB{0, 0, 0})
-	//pdf.SetMargins(ret.margin, ret.margin, ret.margin, ret.margin)
 
 	ret.RendererFuncs[ast.NodeDocument] = ret.renderDocument
 	ret.RendererFuncs[ast.NodeParagraph] = ret.renderParagraph
@@ -1211,7 +1192,6 @@ func (r *DocxRenderer) getImgSize(imgPath string) (width, height float64) {
 
 func (r *DocxRenderer) addPage() {
 	r.renderFooter()
-	//r.pdf.AddPage()
 	r.doc.AddParagraph().AddRun().AddPageBreak()
 }
 
