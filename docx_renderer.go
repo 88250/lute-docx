@@ -156,7 +156,21 @@ func (r *DocxRenderer) RenderCover() {
 	run.AddText(r.Cover.License)
 	run.AddBreak()
 
-	run.AddPageBreak()
+	footer := r.doc.AddFooter()
+	para = footer.AddParagraph()
+	para.Properties().SetAlignment(wml.ST_JcRight)
+	run = para.AddRun()
+	run.Properties().SetSize(8)
+	run.AddText(r.Cover.LinkLabel)
+	link = para.AddHyperLink()
+	link.SetTarget(r.Cover.Link)
+	run = link.AddRun()
+	run.Properties().SetStyle("Hyperlink")
+	run.AddText(r.Cover.Link)
+
+	para = r.doc.AddParagraph()
+	section := para.Properties().AddSection(wml.ST_SectionMarkContinuous)
+	section.SetFooter(footer, wml.ST_HdrFtrDefault)
 }
 
 // NewDocxRenderer 创建一个 HTML 渲染器。
@@ -701,9 +715,6 @@ func (r *DocxRenderer) renderInlineHTML(node *ast.Node, entering bool) ast.WalkS
 }
 
 func (r *DocxRenderer) renderDocument(node *ast.Node, entering bool) ast.WalkStatus {
-	if !entering {
-		r.renderFooter()
-	}
 	return ast.WalkContinue
 }
 
@@ -1158,34 +1169,4 @@ func (r *DocxRenderer) getImgSize(imgPath string) (width, height float64) {
 		h = w * imageRect.Dy() / imageRect.Dx()
 	}
 	return float64(w), float64(h)
-}
-
-func (r *DocxRenderer) addPage() {
-	r.renderFooter()
-	r.doc.AddParagraph().AddRun().AddPageBreak()
-}
-
-func (r *DocxRenderer) renderFooter() {
-	//if r.needRenderFootnotesDef {
-	//	return
-	//}
-	//footer := r.Cover.LinkLabel + r.Cover.Title
-	//r.pdf.SetFont("regular", "R", 8)
-	//r.pdf.SetTextColor(0, 0, 0)
-	//labelWidth, _ := r.pdf.MeasureTextWidth(r.Cover.LinkLabel)
-	//width, _ := r.pdf.MeasureTextWidth(footer)
-	//x := r.pageSize.W - r.margin - width
-	//r.pdf.SetX(x)
-	//y := r.pageSize.H - r.margin
-	//r.pdf.SetY(y)
-	//r.pdf.Cell(nil, r.Cover.LinkLabel)
-	//
-	//r.pdf.SetTextColor(66, 133, 244)
-	//r.pdf.Cell(nil, r.Cover.Title)
-	//r.pdf.AddExternalLink(r.Cover.Link, x+labelWidth, y, width-labelWidth, 8)
-	//
-	//font := r.peekFont()
-	//r.pdf.SetFont(font.family, font.style, font.size)
-	//textColor := r.peekTextColor()
-	//r.pdf.SetTextColor(textColor.R, textColor.G, textColor.B)
 }

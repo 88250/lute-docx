@@ -10,7 +10,7 @@ Lute DOCX 是一款将 Markdown 文本转换为 Word 文档 (.docx) 的小工具
 
 ## 📸 截图
 
-TBD
+![sample](https://user-images.githubusercontent.com/873584/79592318-69a17100-810c-11ea-8c26-a6168e681325.png)
 
 ## ⚗ 用法
 
