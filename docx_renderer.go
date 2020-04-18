@@ -191,7 +191,7 @@ func NewDocxRenderer(tree *parse.Tree) *DocxRenderer {
 	codeStyle.RunProperties().Color().SetColor(codeColor)
 	codeStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, codeColor)
 
-	codeBlockStyle := doc.Styles.AddStyle("Code", wml.ST_StyleTypeCharacter, false)
+	codeBlockStyle := doc.Styles.AddStyle("CodeBlock", wml.ST_StyleTypeCharacter, false)
 	codeBlockStyle.SetName("Code")
 	codeBlockStyle.SetBasedOn("DefaultParagraphFont")
 	codeBlockColor := color.FromHex("#569E3D")
@@ -435,11 +435,15 @@ func (r *DocxRenderer) renderCodeBlockCode(node *ast.Node, entering bool) ast.Wa
 
 func (r *DocxRenderer) renderCodeBlockLike(content []byte) {
 	r.Newline()
-	//r.pdf.SetY(r.pdf.GetY() + 6)
-	//r.pushTextColor(&RGB{86, 158, 61})
-	//r.WriteString(util.BytesToStr(content))
-	//r.popTextColor()
-	//r.pdf.SetY(r.pdf.GetY() + 6)
+	para := r.doc.AddParagraph()
+	r.pushPara(&para)
+	run := para.AddRun()
+	run.Properties().SetStyle("CodeBlock")
+	r.pushRun(&run)
+	r.WriteString(util.BytesToStr(content))
+	r.popRun()
+	r.reRun()
+	r.popPara()
 	r.Newline()
 }
 
