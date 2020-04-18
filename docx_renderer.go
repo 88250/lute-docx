@@ -88,6 +88,7 @@ func (r *DocxRenderer) RenderCover() {
 	run.AddBreak()
 	run.AddBreak()
 	run.AddBreak()
+	run.AddBreak()
 	logoImgPath, ok, isTemp := r.downloadImg(r.Cover.LogoLink)
 	if ok {
 		img, _ := common.ImageFromFile(logoImgPath)
@@ -592,7 +593,12 @@ func (r *DocxRenderer) renderTable(node *ast.Node, entering bool) ast.WalkStatus
 
 func (r *DocxRenderer) renderStrikethrough(node *ast.Node, entering bool) ast.WalkStatus {
 	if entering {
-		r.peekRun().Properties().SetStrikeThrough(true)
+		run := r.peekPara().AddRun()
+		r.pushRun(&run)
+		run.Properties().SetStrikeThrough(true)
+	} else {
+		r.popRun()
+		r.reRun()
 	}
 	return ast.WalkContinue
 }
@@ -823,7 +829,12 @@ func (r *DocxRenderer) renderCodeSpanCloseMarker(node *ast.Node, entering bool) 
 
 func (r *DocxRenderer) renderEmphasis(node *ast.Node, entering bool) ast.WalkStatus {
 	if entering {
-		r.peekRun().Properties().SetItalic(true)
+		run := r.peekPara().AddRun()
+		r.pushRun(&run)
+		run.Properties().SetItalic(true)
+	} else {
+		r.popRun()
+		r.reRun()
 	}
 	return ast.WalkContinue
 }
@@ -834,7 +845,6 @@ func (r *DocxRenderer) renderEmAsteriskOpenMarker(node *ast.Node, entering bool)
 }
 
 func (r *DocxRenderer) renderEmAsteriskCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popRun()
 	return ast.WalkStop
 }
 
@@ -843,13 +853,17 @@ func (r *DocxRenderer) renderEmUnderscoreOpenMarker(node *ast.Node, entering boo
 }
 
 func (r *DocxRenderer) renderEmUnderscoreCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popRun()
 	return ast.WalkStop
 }
 
 func (r *DocxRenderer) renderStrong(node *ast.Node, entering bool) ast.WalkStatus {
 	if entering {
-		r.peekRun().Properties().SetBold(true)
+		run := r.peekPara().AddRun()
+		r.pushRun(&run)
+		run.Properties().SetBold(true)
+	} else {
+		r.popRun()
+		r.reRun()
 	}
 	return ast.WalkContinue
 }
@@ -860,7 +874,6 @@ func (r *DocxRenderer) renderStrongA6kOpenMarker(node *ast.Node, entering bool) 
 }
 
 func (r *DocxRenderer) renderStrongA6kCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popRun()
 	return ast.WalkStop
 }
 
@@ -869,7 +882,6 @@ func (r *DocxRenderer) renderStrongU8eOpenMarker(node *ast.Node, entering bool) 
 }
 
 func (r *DocxRenderer) renderStrongU8eCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	r.popRun()
 	return ast.WalkStop
 }
 
