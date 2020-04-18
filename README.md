@@ -47,7 +47,7 @@ Lute DOCX 是一款将 Markdown 文本转换为 Word 文档 (.docx) 的小工具
 
 ## 📄 开源协议
 
-Lute DOCX 使用 [木兰宽松许可证, 第2版](http://license.coscl.org.cn/MulanPSL2) 开源协议。
+Lute DOCX 使用 [AGPLv3](https://www.gnu.org/licenses/agpl-3.0.txt) 开源协议。
 
 ## 🙏 鸣谢
 
