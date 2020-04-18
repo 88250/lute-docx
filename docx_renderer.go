@@ -434,17 +434,16 @@ func (r *DocxRenderer) renderCodeBlockCode(node *ast.Node, entering bool) ast.Wa
 }
 
 func (r *DocxRenderer) renderCodeBlockLike(content []byte) {
-	r.Newline()
 	para := r.doc.AddParagraph()
 	r.pushPara(&para)
 	run := para.AddRun()
 	run.Properties().SetStyle("CodeBlock")
 	r.pushRun(&run)
 	r.WriteString(util.BytesToStr(content))
+	run.AddBreak()
 	r.popRun()
 	r.reRun()
 	r.popPara()
-	r.Newline()
 }
 
 func (r *DocxRenderer) renderCodeSpanLike(content []byte) {
@@ -527,7 +526,6 @@ func (r *DocxRenderer) renderMathBlockOpenMarker(node *ast.Node, entering bool) 
 }
 
 func (r *DocxRenderer) renderMathBlock(node *ast.Node, entering bool) ast.WalkStatus {
-	r.Newline()
 	return ast.WalkContinue
 }
 
@@ -890,11 +888,6 @@ func (r *DocxRenderer) renderStrongU8eCloseMarker(node *ast.Node, entering bool)
 }
 
 func (r *DocxRenderer) renderBlockquote(node *ast.Node, entering bool) ast.WalkStatus {
-	if entering {
-		r.Newline()
-	} else {
-		r.Newline()
-	}
 	return ast.WalkContinue
 }
 
