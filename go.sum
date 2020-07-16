@@ -1,7 +1,7 @@
 github.com/88250/gulu v1.1.0 h1:aU8HncW1XNssT1insCOz6rvmTUDrtsDwSnzeqTEqNFA=
 github.com/88250/gulu v1.1.0/go.mod h1:a2POIziN+QFeNT4Mj7FHH2lz1HEaFlMRF6wPE0NHM4U=
-github.com/88250/lute v1.4.8 h1:nlP+h/v6kpyMAzdd2LhI/KRXiqI9ubTGvQd2hdUMc4M=
-github.com/88250/lute v1.4.8/go.mod h1:/FZfHGDOGucP2soqC8HSVsmOOC8yKccWJm2Dt4nUz00=
+github.com/88250/lute v1.5.2 h1:9YLOZmdxsvLMAuS6F27O+UtJEOy3xEgBMJTyM9w63VU=
+github.com/88250/lute v1.5.2/go.mod h1:/FZfHGDOGucP2soqC8HSVsmOOC8yKccWJm2Dt4nUz00=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38 h1:smF2tmSOzy2Mm+0dGI2AIUHY+w0BUc+4tn40djz7+6U=
 github.com/alecthomas/assert v0.0.0-20170929043011-405dbfeb8e38/go.mod h1:r7bzyVFMNntcxPZXK3/+KdruV1H5KSlyVY0gc+NgInI=
 github.com/alecthomas/chroma v0.7.3 h1:NfdAERMy+esYQs8OXk0I868/qDxxCEo7FMz1WIqMAeI=
@@ -45,8 +45,8 @@ github.com/stretchr/testify v1.3.0/go.mod h1:M5WIy9Dh21IEIfnGCwXGc5bZfKNJtfHm1UV
 github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81PSLYec5m4=
 github.com/stretchr/testify v1.6.1 h1:hDPOHmpOpP40lSULcqw7IrRb/u7w6RpDC9399XyoNd0=
 github.com/stretchr/testify v1.6.1/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
-github.com/unidoc/unioffice v1.3.1 h1:5D0/bz6BCaZBDpt1JW6HJORoglOAL5YQx93+rmSMoYg=
-github.com/unidoc/unioffice v1.3.1/go.mod h1:w96hj0WDRaikkRdFxQsmyLUdLOusl0yPDU/FMQfcWbM=
+github.com/unidoc/unioffice v1.4.0 h1:yl+TbZJu2GTVYAYvu51wppj0R+fPC67xzVcy91qgrzI=
+github.com/unidoc/unioffice v1.4.0/go.mod h1:7wl8btOkZW1TfqfpDWoujRXkUpowwisGRYDo7COHBiI=
 golang.org/x/sys v0.0.0-20200116001909-b77594299b42/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200223170610-d5e6a3e2c0ae/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
 golang.org/x/sys v0.0.0-20200413165638-669c56c373c4/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
