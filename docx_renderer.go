@@ -1141,7 +1141,7 @@ func (r *DocxRenderer) downloadImg(src string) (localPath string, ok, isTemp boo
 
 // qiniuImgProcessing 七牛云图片样式处理。
 func (r *DocxRenderer) qiniuImgProcessing(src string) string {
-	if !strings.Contains(src, "img.hacpai.com") && !strings.Contains(src, "imageView") {
+	if !strings.Contains(src, "img.hacpai.com") && !strings.Contains(src, "b3logfile.com") && !strings.Contains(src, "imageView") {
 		return src
 	}
 

@@ -39,7 +39,7 @@ func main() {
 
 	argCoverTitle := flag.String("coverTitle", "Lute DOCX - Markdown 生成 DOCX", "封面 - 标题")
 	argCoverAuthor := flag.String("coverAuthor", "88250", "封面 - 作者")
-	argCoverAuthorLink := flag.String("coverAuthorLink", "https://hacpai.com/member/88250", "封面 - 作者链接")
+	argCoverAuthorLink := flag.String("coverAuthorLink", "https://ld246.com/member/88250", "封面 - 作者链接")
 	argCoverLink := flag.String("coverLink", "https://github.com/88250/lute-docx", "封面 - 原文链接")
 	argCoverSource := flag.String("coverSource", "GitHub", "封面 - 来源网站")
 	argCoverSourceLink := flag.String("coverSourceLink", "https://github.com", "封面 - 来源网站链接")
