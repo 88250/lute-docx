@@ -312,20 +312,24 @@ func (r *DocxRenderer) Render() (output []byte) {
 		return render(n, entering)
 	})
 
-	if r.Option.Footnotes && 0 < len(r.Tree.Context.FootnotesDefs) {
+	if r.Option.Footnotes && 0 < len(r.FootnotesDefs) {
 		output = r.RenderFootnotesDefs(r.Tree.Context)
 	}
 	return
 }
 
 func (r *DocxRenderer) renderDefault(n *ast.Node, entering bool) ast.WalkStatus {
-	r.WriteString("not found render function for node [type=" + n.Type.String() + ", Tokens=" + util.BytesToStr(n.Tokens) + "]")
+	if entering {
+		r.WriteString("not found render function for node [type=" + n.Type.String() + ", Tokens=" + util.BytesToStr(n.Tokens) + "]")
+	}
 	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderBackslashContent(node *ast.Node, entering bool) ast.WalkStatus {
-	r.Write(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.Write(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderBackslash(node *ast.Node, entering bool) ast.WalkStatus {
@@ -333,22 +337,23 @@ func (r *DocxRenderer) renderBackslash(node *ast.Node, entering bool) ast.WalkSt
 }
 
 func (r *DocxRenderer) renderToC(node *ast.Node, entering bool) ast.WalkStatus {
-	headings := r.headings()
-	length := len(headings)
-	if 1 > length {
-		return ast.WalkStop
+	if entering {
+		headings := r.headings()
+		length := len(headings)
+		if 1 > length {
+			return ast.WalkContinue
+		}
+		r.WriteString("<div class=\"toc-div\">")
+		for i, heading := range headings {
+			level := strconv.Itoa(heading.HeadingLevel)
+			spaces := (heading.HeadingLevel - 1) * 2
+			r.WriteString(strings.Repeat("&emsp;", spaces))
+			r.WriteString("<span class=\"toc-h" + level + "\">")
+			r.WriteString("<a class=\"toc-a\" href=\"#toc_h" + level + "_" + strconv.Itoa(i) + "\">" + heading.Text() + "</a></span><br>")
+		}
+		r.WriteString("</div>\n\n")
 	}
-	r.WriteString("<div class=\"toc-div\">")
-	for i, heading := range headings {
-		level := strconv.Itoa(heading.HeadingLevel)
-		spaces := (heading.HeadingLevel - 1) * 2
-		r.WriteString(strings.Repeat("&emsp;", spaces))
-		r.WriteString("<span class=\"toc-h" + level + "\">")
-		r.WriteString("<a class=\"toc-a\" href=\"#toc_h" + level + "_" + strconv.Itoa(i) + "\">" + heading.Text() + "</a></span><br>")
-	}
-	r.WriteString("</div>\n\n")
-
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) headings() (ret []*ast.Node) {
@@ -414,29 +419,33 @@ func (r *DocxRenderer) renderFootnotesRef(node *ast.Node, entering bool) ast.Wal
 	//r.pdf.SetFont(font.family, font.style, font.size)
 	//textColor := r.peekTextColor()
 	//r.pdf.SetTextColor(textColor.R, textColor.G, textColor.B)
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderFootnotesDef(node *ast.Node, entering bool) ast.WalkStatus {
 	if !r.needRenderFootnotesDef {
-		return ast.WalkStop
+		return ast.WalkContinue
 	}
 	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeBlock(node *ast.Node, entering bool) ast.WalkStatus {
-	if !node.IsFencedCodeBlock {
-		// 缩进代码块处理
-		r.renderCodeBlockLike(node.Tokens)
-		return ast.WalkStop
+	if entering {
+		if !node.IsFencedCodeBlock {
+			// 缩进代码块处理
+			r.renderCodeBlockLike(node.Tokens)
+			return ast.WalkContinue
+		}
 	}
 	return ast.WalkContinue
 }
 
 // renderCodeBlockCode 进行代码块 HTML 渲染，实现语法高亮。
 func (r *DocxRenderer) renderCodeBlockCode(node *ast.Node, entering bool) ast.WalkStatus {
-	r.renderCodeBlockLike(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.renderCodeBlockLike(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeBlockLike(content []byte) {
@@ -473,45 +482,47 @@ func (r *DocxRenderer) reRun() {
 }
 
 func (r *DocxRenderer) renderCodeBlockCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeBlockInfoMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeBlockOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmojiAlias(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmojiImg(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmojiUnicode(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmoji(node *ast.Node, entering bool) ast.WalkStatus {
 	// 暂不渲染 Emoji，字体似乎有问题
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderInlineMathCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderInlineMathContent(node *ast.Node, entering bool) ast.WalkStatus {
-	r.renderCodeSpanLike(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.renderCodeSpanLike(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderInlineMathOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderInlineMath(node *ast.Node, entering bool) ast.WalkStatus {
@@ -519,16 +530,18 @@ func (r *DocxRenderer) renderInlineMath(node *ast.Node, entering bool) ast.WalkS
 }
 
 func (r *DocxRenderer) renderMathBlockCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderMathBlockContent(node *ast.Node, entering bool) ast.WalkStatus {
-	r.renderCodeBlockLike(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.renderCodeBlockLike(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderMathBlockOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderMathBlock(node *ast.Node, entering bool) ast.WalkStatus {
@@ -612,58 +625,60 @@ func (r *DocxRenderer) renderStrikethrough(node *ast.Node, entering bool) ast.Wa
 }
 
 func (r *DocxRenderer) renderStrikethrough1OpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrikethrough1CloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrikethrough2OpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrikethrough2CloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderLinkTitle(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderLinkDest(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderLinkSpace(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderLinkText(node *ast.Node, entering bool) ast.WalkStatus {
-	if ast.NodeImage != node.Parent.Type {
-		r.Write(node.Tokens)
+	if entering {
+		if ast.NodeImage != node.Parent.Type {
+			r.Write(node.Tokens)
+		}
 	}
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCloseParen(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderOpenParen(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCloseBracket(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderOpenBracket(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderBang(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderImage(node *ast.Node, entering bool) ast.WalkStatus {
@@ -719,13 +734,17 @@ func (r *DocxRenderer) renderLink(node *ast.Node, entering bool) ast.WalkStatus 
 }
 
 func (r *DocxRenderer) renderHTML(node *ast.Node, entering bool) ast.WalkStatus {
-	r.renderCodeBlockLike(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.renderCodeBlockLike(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderInlineHTML(node *ast.Node, entering bool) ast.WalkStatus {
-	r.renderCodeSpanLike(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.renderCodeSpanLike(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderDocument(node *ast.Node, entering bool) ast.WalkStatus {
@@ -813,9 +832,11 @@ func (r *DocxRenderer) renderParagraph(node *ast.Node, entering bool) ast.WalkSt
 }
 
 func (r *DocxRenderer) renderText(node *ast.Node, entering bool) ast.WalkStatus {
-	text := util.BytesToStr(node.Tokens)
-	r.WriteString(text)
-	return ast.WalkStop
+	if entering {
+		text := util.BytesToStr(node.Tokens)
+		r.WriteString(text)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeSpan(node *ast.Node, entering bool) ast.WalkStatus {
@@ -823,16 +844,18 @@ func (r *DocxRenderer) renderCodeSpan(node *ast.Node, entering bool) ast.WalkSta
 }
 
 func (r *DocxRenderer) renderCodeSpanOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeSpanContent(node *ast.Node, entering bool) ast.WalkStatus {
-	r.renderCodeSpanLike(node.Tokens)
-	return ast.WalkStop
+	if entering {
+		r.renderCodeSpanLike(node.Tokens)
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderCodeSpanCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmphasis(node *ast.Node, entering bool) ast.WalkStatus {
@@ -848,20 +871,19 @@ func (r *DocxRenderer) renderEmphasis(node *ast.Node, entering bool) ast.WalkSta
 }
 
 func (r *DocxRenderer) renderEmAsteriskOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmAsteriskCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmUnderscoreOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderEmUnderscoreCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrong(node *ast.Node, entering bool) ast.WalkStatus {
@@ -877,20 +899,19 @@ func (r *DocxRenderer) renderStrong(node *ast.Node, entering bool) ast.WalkStatu
 }
 
 func (r *DocxRenderer) renderStrongA6kOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrongA6kCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrongU8eOpenMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderStrongU8eCloseMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderBlockquote(node *ast.Node, entering bool) ast.WalkStatus {
@@ -898,7 +919,7 @@ func (r *DocxRenderer) renderBlockquote(node *ast.Node, entering bool) ast.WalkS
 }
 
 func (r *DocxRenderer) renderBlockquoteMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderHeading(node *ast.Node, entering bool) ast.WalkStatus {
@@ -942,7 +963,7 @@ func (r *DocxRenderer) renderHeading(node *ast.Node, entering bool) ast.WalkStat
 }
 
 func (r *DocxRenderer) renderHeadingC8hMarker(node *ast.Node, entering bool) ast.WalkStatus {
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderList(node *ast.Node, entering bool) ast.WalkStatus {
@@ -1004,17 +1025,21 @@ func (r *DocxRenderer) renderThematicBreak(node *ast.Node, entering bool) ast.Wa
 	//r.pdf.SetY(r.pdf.GetY() + 12)
 	//r.pdf.SetStrokeColor(0, 0, 0)
 	//r.Newline()
-	return ast.WalkStop
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderHardBreak(node *ast.Node, entering bool) ast.WalkStatus {
-	r.Newline()
-	return ast.WalkStop
+	if entering {
+		r.Newline()
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) renderSoftBreak(node *ast.Node, entering bool) ast.WalkStatus {
-	r.Newline()
-	return ast.WalkStop
+	if entering {
+		r.Newline()
+	}
+	return ast.WalkContinue
 }
 
 func (r *DocxRenderer) pushPara(para *document.Paragraph) {
