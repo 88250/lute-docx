@@ -181,7 +181,7 @@ func (r *DocxRenderer) RenderCover() {
 }
 
 // NewDocxRenderer 创建一个 HTML 渲染器。
-func NewDocxRenderer(tree *parse.Tree) *DocxRenderer {
+func NewDocxRenderer(tree *parse.Tree, options *render.Options) *DocxRenderer {
 	doc := document.New()
 	linkStyle := doc.Styles.AddStyle("Hyperlink", wml.ST_StyleTypeCharacter, false)
 	linkStyle.SetName("Hyperlink")
@@ -204,7 +204,7 @@ func NewDocxRenderer(tree *parse.Tree) *DocxRenderer {
 	codeBlockStyle.RunProperties().Color().SetColor(codeBlockColor)
 	codeBlockStyle.RunProperties().SetUnderline(wml.ST_UnderlineSingle, codeBlockColor)
 
-	ret := &DocxRenderer{BaseRenderer: render.NewBaseRenderer(tree), needRenderFootnotesDef: false, doc: doc}
+	ret := &DocxRenderer{BaseRenderer: render.NewBaseRenderer(tree, options), needRenderFootnotesDef: false, doc: doc}
 	ret.zoom = 0.8
 	ret.fontSize = int(math.Floor(14 * ret.zoom))
 	ret.lineHeight = 24.0 * ret.zoom
@@ -312,7 +312,7 @@ func (r *DocxRenderer) Render() (output []byte) {
 		return render(n, entering)
 	})
 
-	if r.Option.Footnotes && 0 < len(r.FootnotesDefs) {
+	if 0 < len(r.FootnotesDefs) {
 		output = r.RenderFootnotesDefs(r.Tree.Context)
 	}
 	return
@@ -719,7 +719,7 @@ func (r *DocxRenderer) renderLink(node *ast.Node, entering bool) ast.WalkStatus 
 	if entering {
 		dest := node.ChildByType(ast.NodeLinkDest)
 		destTokens := dest.Tokens
-		destTokens = r.Tree.Context.RelativePath(destTokens)
+		destTokens = r.RelativePath(destTokens)
 		para := r.peekPara()
 		link := para.AddHyperLink()
 		link.SetTarget(util.BytesToStr(destTokens))
@@ -981,7 +981,7 @@ func (r *DocxRenderer) renderListItem(node *ast.Node, entering bool) ast.WalkSta
 		nestedLevel := r.countParentContainerBlocks(node) - 1
 		indent := float64(nestedLevel * 22)
 
-		if 3 == node.ListData.Typ && "" != r.Option.GFMTaskListItemClass &&
+		if 3 == node.ListData.Typ && "" != r.Options.GFMTaskListItemClass &&
 			nil != node.FirstChild && nil != node.FirstChild.FirstChild && ast.NodeTaskListItemMarker == node.FirstChild.FirstChild.Type {
 			r.WriteString(fmt.Sprintf("%s", node.ListData.Marker))
 		} else {
